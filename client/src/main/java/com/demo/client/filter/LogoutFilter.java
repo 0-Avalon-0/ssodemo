@@ -1,5 +1,6 @@
 package com.demo.client.filter;
 
+import com.demo.client.ClientSession.SessionStorage;
 import com.demo.client.constant.ConstantVal;
 
 import javax.servlet.*;
@@ -31,13 +32,25 @@ public class LogoutFilter implements Filter {
         HttpServletResponse resp = (HttpServletResponse)response;
         HttpSession httpSession = req.getSession();
 
+        if(req.getParameter(ConstantVal.TOKEN)!=null){
+            System.out.println("用户未登录，无法退出登录");
+            return;
+        }
 
+        String token = (String)httpSession.getAttribute(ConstantVal.TOKEN);
+
+        //子系统向认证中心请求退出
+        if("/logout".equals(req.getRequestURI())){
+            httpSession = SessionStorage.Session_Instance.remove(token);
+            if(httpSession != null)
+                httpSession.invalidate();
+        }
+
+        //认证中心注销子系统
         if(req.getParameter(ConstantVal.logout_request)!=null){
             //request带token->未登录
-            if(req.getParameter(ConstantVal.TOKEN)!=null){
-                System.out.println("用户未登录，无法退出登录");
-                return;
-            }
+
+            //session带token
             resp.sendRedirect(config.getInitParameter("logoutUrl"));
             return;
         }
